@@ -9,26 +9,43 @@ import sys
 from btlewrap import available_backends, BluepyBackend, GatttoolBackend, PygattBackend
 from mitemp_bt.mitemp_bt_poller import MiTempBtPoller, \
     MI_TEMPERATURE, MI_HUMIDITY, MI_BATTERY
+from MqttHandler import MqttHandler
+import time
 
+
+class argMaker:
+    def __init__(self, mac):
+        self.mac = mac
+        self.backend = "bluepy"
+        self.verbose = None
 
 def valid_mitemp_mac(mac, pat=re.compile(r"4C:65:A8:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}")):
     """Check for valid mac adresses."""
     if not pat.match(mac.upper()):
-        raise argparse.ArgumentTypeError('The MAC address "{}" seems to be in the wrong format'.format(mac))
+        print('The MAC address "{}" seems to be in the wrong format'.format(mac))
     return mac
 
 
 def poll(args):
     """Poll data from the sensor."""
-    backend = _get_backend(args)
+    backend = _get_backend(args.backend)
     poller = MiTempBtPoller(args.mac, backend)
     print("Getting data from Mi Temperature and Humidity Sensor")
-    print("FW: {}".format(poller.firmware_version()))
-    print("Name: {}".format(poller.name()))
-    print("Battery: {}".format(poller.parameter_value(MI_BATTERY)))
-    print("Temperature: {}".format(poller.parameter_value(MI_TEMPERATURE)))
-    print("Humidity: {}".format(poller.parameter_value(MI_HUMIDITY)))
+    return poller.firmware_version(), poller.name(),  poller.parameter_value(MI_BATTERY), poller.parameter_value(MI_TEMPERATURE), poller.parameter_value(MI_HUMIDITY)
+#    print("FW: {}".format(poller.firmware_version()))
+#    print("Name: {}".format(poller.name()))
+#    print("Battery: {}".format(poller.parameter_value(MI_BATTERY)))
+#    print("Temperature: {}".format(poller.parameter_value(MI_TEMPERATURE)))
+#    print("Humidity: {}".format(poller.parameter_value(MI_HUMIDITY)))
 
+
+def print_poll(args):
+    firmware, name, battery, temp, hum = poll(args)
+    print("FW: {}".format(firmware))
+    print("Name: {}".format(name))
+    print("Battery: {}".format(battery))
+    print("Temperature: {}".format(temp))
+    print("Humidity: {}".format(hum))
 
 # def scan(args):
 #     """Scan for sensors."""
@@ -41,13 +58,13 @@ def poll(args):
 #         print('  {}'.format(device))
 
 
-def _get_backend(args):
+def _get_backend(backend):
     """Extract the backend class from the command line arguments."""
-    if args.backend == 'gatttool':
+    if backend == 'gatttool':
         backend = GatttoolBackend
-    elif args.backend == 'bluepy':
+    elif backend == 'bluepy':
         backend = BluepyBackend
-    elif args.backend == 'pygatt':
+    elif backend == 'pygatt':
         backend = PygattBackend
     else:
         raise Exception('unknown backend: {}'.format(args.backend))
@@ -72,7 +89,7 @@ def main():
 
     parser_poll = subparsers.add_parser('poll', help='poll data from a sensor')
     parser_poll.add_argument('mac', type=valid_mitemp_mac)
-    parser_poll.set_defaults(func=poll)
+    parser_poll.set_defaults(func=print_poll)
 
     # parser_scan = subparsers.add_parser('scan', help='scan for devices')
     # parser_scan.set_defaults(func=scan)
@@ -92,5 +109,25 @@ def main():
     args.func(args)
 
 
+def mqtt_mess_recv(payload, topic):
+    pass
+
+
+def mqtt_inject():
+    mqtt = MqttHandler("192.168.1.100", None, "user", "pass", mqtt_mess_recv)
+    while not mqtt.connected:
+        pass
+
+    args = argMaker("58:2d:34:31:9a:b8")
+    firmware, name, battery, temp, hum = poll(args)
+    mqtt.publish('temp/kitchen/temp', temp, True)
+    mqtt.publish('temp/kitchen/hum', hum, True)
+    mqtt.publish('temp/kitchen/battery', battery, True)
+    time.sleep(1)
+
+
 if __name__ == '__main__':
-    main()
+    #main()
+    mqtt_inject()
+
+

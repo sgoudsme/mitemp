@@ -1,3 +1,13 @@
+## Adaptions by Sibrecht Goudsmedt:
+Injecting MQTT
+fill in username and password in demo.py
+
+I run this in a cron job:
+sibrecht@leo$ crontab -e
+
+* * * * * python3 /opt/xiaomi-temp/demo.py
+
+
 # mitemp_bt - Library for Xiaomi Mi Temperature and Humidity Sensor (v2) with Bleutooth LE and the LCD display
 
 
