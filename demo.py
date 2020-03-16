@@ -5,6 +5,7 @@ import argparse
 import re
 import logging
 import sys
+import yaml
 
 from btlewrap import available_backends, BluepyBackend, GatttoolBackend, PygattBackend
 from mitemp_bt.mitemp_bt_poller import MiTempBtPoller, \
@@ -114,12 +115,16 @@ def mqtt_mess_recv(payload, topic):
 
 
 def mqtt_inject():
-    mqtt = MqttHandler("192.168.1.100", None, "user", "pass", mqtt_mess_recv)
+    config = None
+    with open('config.yaml') as file:
+        config = yaml.full_load(file)
+
+    mqtt = MqttHandler(config['mqtt_broker'], None, config['mqtt_username'], config['mqtt_password'], mqtt_mess_recv)
     while not mqtt.connected:
         pass
 
-    tempsens = ['58:2D:34:36:B5:6B', '58:2D:34:36:B5:CB', '58:2D:34:31:9A:B8']
-    for sens in tempsens:
+    for sens in config['xiaomi-sensors']:
+        print(sens)
         number_of_tries = 0
         while number_of_tries < 10:
             try:

@@ -1,0 +1,8 @@
+mqtt_broker: 192.168.1.100
+mqtt_username: USER
+mqtt_password: PASS
+
+xiaomi-sensors:
+  - 58:2D:34:36:B5:6B
+  - 58:2D:34:36:B5:CB
+  - 58:2D:34:31:9A:B8
