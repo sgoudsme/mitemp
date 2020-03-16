@@ -118,22 +118,21 @@ def mqtt_inject():
     while not mqtt.connected:
         pass
 
-    tempsens = ['58:2D:34:36:B5:6B', '58:2D:34:36:B5:CB']
-    counter = 0
+    tempsens = ['58:2D:34:36:B5:6B', '58:2D:34:36:B5:CB', '58:2D:34:31:9A:B8']
     for sens in tempsens:
         number_of_tries = 0
         while number_of_tries < 10:
             try:
                 args = argMaker(sens)
                 firmware, name, battery, temp, hum = poll(args)
-                mqtt.publish('temp/' + str(counter) +'/temp', temp, True)
-                mqtt.publish('temp/' + str(counter) +'/hum', hum, True)
-                mqtt.publish('temp/' + str(counter) +'/battery', battery, True)
+                sens_name = sens[-5:].replace(":","")
+                mqtt.publish('temp/' + sens_name +'/temp', temp, True)
+                mqtt.publish('temp/' + sens_name +'/hum', hum, True)
+                mqtt.publish('temp/' + sens_name +'/battery', battery, True)
                 number_of_tries = 15
             except:
                 number_of_tries = number_of_tries + 1
             time.sleep(1)
-            counter = counter + 1
         if number_of_tries != 15:
             print("error in getting sensor data")
             mqtt.publish('debug', 'Error getting temperature data')
