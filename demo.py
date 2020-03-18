@@ -6,6 +6,7 @@ import re
 import logging
 import sys
 import yaml
+import os
 
 from btlewrap import available_backends, BluepyBackend, GatttoolBackend, PygattBackend
 from mitemp_bt.mitemp_bt_poller import MiTempBtPoller, \
@@ -115,8 +116,9 @@ def mqtt_mess_recv(payload, topic):
 
 
 def mqtt_inject():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     config = None
-    with open('config.yaml') as file:
+    with open(dir_path + '/config.yaml') as file:
         config = yaml.full_load(file)
 
     mqtt = MqttHandler(config['mqtt_broker'], None, config['mqtt_username'], config['mqtt_password'], mqtt_mess_recv)
@@ -141,7 +143,6 @@ def mqtt_inject():
         if number_of_tries != 15:
             print("error in getting sensor data")
             mqtt.publish('debug', 'Error getting temperature data')
-            import os
             os.system('sudo reboot')
 
 
